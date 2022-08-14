@@ -1,53 +1,70 @@
 package main
 
 import (
-	"AptosSdk/pkg/utils"
-	"encoding/hex"
+	"AptosSdk/pkg/aptos"
 	"fmt"
-	"golang.org/x/crypto/nacl/sign"
-	"golang.org/x/crypto/sha3"
-	"strings"
 )
 
 func main() {
-	seedStr := "abcd1234abcd1234abcd1234abcd1234"
+	// two seeds for two accounts
+	seedA := "abcd1234abcd1234abcd1234abcd1234"
+	seedB := "abcd5678abcd5678abcd5678abcd5678"
 
-	seed := strings.NewReader(seedStr)
-	publicKey, privateKey, err := sign.GenerateKey(seed)
+	accountA, err := aptos.NewAccount(seedA)
 	if err != nil {
-		fmt.Println("nacl GenerateKey error:", err)
-		return
+		panic("generator new address by seed failed:%s" + err.Error())
 	}
 
-	pubKeyBytes := [32]byte(*publicKey)
-	priKeyBytes := [64]byte(*privateKey)
-
-	var toHashData []byte
-	toHashData = append(toHashData, pubKeyBytes[:]...)
-	toHashData = append(toHashData, byte(0x00))
-
-	hasher := sha3.New256()
-	hasher.Write(toHashData)
-
-	hashedBytes := hasher.Sum(nil)
-	fmt.Println("ret:", len(hashedBytes))
-
-	pubKeyHex := hex.EncodeToString(hashedBytes)
-	priKeyHex := hex.EncodeToString(priKeyBytes[:])
-
-	fmt.Println(len(pubKeyHex), len(priKeyHex))
-	fmt.Println(pubKeyHex)
-	fmt.Println(priKeyHex)
-
-	pub2, pri2, err := utils.GenNewAccount(seedStr)
-	fmt.Println(pub2)
-	fmt.Println(pri2)
-
-	if pubKeyHex != pub2 {
-		panic("public key not equal")
+	accountB, err := aptos.NewAccount(seedB)
+	if err != nil {
+		panic("generator new address by seed failed:%s" + err.Error())
 	}
-	if priKeyHex != pri2 {
-		panic("private key not equal")
+
+	// print address of account A and B
+	{
+		fmt.Println("public address & private address.")
+		fmt.Println(accountA.PublicKey(), accountA.PublicAddress())
+		fmt.Println(accountB.PublicKey(), accountB.PublicAddress())
+	}
+
+	if false {
+		aptos.FoundAccount(accountA, 100000)
+		aptos.FoundAccount(accountB, 0)
+	}
+
+	// get account balance
+	if true {
+		balanceA, err := aptos.AccountGetBalance(accountA)
+		if err != nil {
+			panic("A AccountGetBalance failed:" + err.Error())
+		}
+
+		balanceB, err := aptos.AccountGetBalance(accountB)
+		if err != nil {
+			panic("A AccountGetBalance failed:" + err.Error())
+		}
+
+		fmt.Printf("before transaction, balance A: %d, balance B: %d\n", balanceA, balanceB)
+	}
+
+	// send coin from account A to B
+	if true {
+		aptos.Transfer(accountA, accountB.PublicAddress(), 10000)
+	}
+
+	// get account balance after transfer
+	if true {
+		balanceA, err := aptos.AccountGetBalance(accountA)
+		if err != nil {
+			panic("A AccountGetBalance failed:" + err.Error())
+		}
+
+		balanceB, err := aptos.AccountGetBalance(accountB)
+		if err != nil {
+			panic("A AccountGetBalance failed:" + err.Error())
+		}
+
+		fmt.Printf("after transaction, balance A: %d, balance B: %d\n", balanceA, balanceB)
 	}
 
 	fmt.Println("\n=== end of main ===")
